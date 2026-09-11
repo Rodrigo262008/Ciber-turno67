@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CiberTurno | Control de turnos</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef4f7;color:#17365d}
+header{background:#17365d;color:white;padding:24px 18px;text-align:center}header h1{margin:0;font-size:34px}header p{margin:8px 0 0;color:#dceaf5}
+main{max-width:1050px;margin:24px auto;padding:0 16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px}
+.card{background:white;border-radius:18px;padding:20px;box-shadow:0 6px 20px #17365d18}.card h2{margin-top:0}
+.timer{font-size:54px;font-weight:bold;text-align:center;margin:18px 0;color:#168a8a}.status{text-align:center;font-weight:bold;padding:8px;border-radius:10px;background:#eaf4f4}
+button{border:0;border-radius:10px;padding:11px 15px;margin:4px;cursor:pointer;font-weight:bold;background:#17365d;color:white}button.alt{background:#168a8a}button.warn{background:#f2b134;color:#17365d}
+input,select{width:100%;padding:11px;border:1px solid #ccd7df;border-radius:9px;margin:6px 0 12px}
+.pc{display:flex;justify-content:space-between;align-items:center;border:1px solid #d8e1e7;border-radius:12px;padding:12px;margin:8px 0}.free{color:#168a8a}.busy{color:#c0392b}
+.small{font-size:13px;color:#667085}.notice{background:#fff7e6;border-left:5px solid #f2b134;padding:12px;border-radius:8px}
+footer{text-align:center;color:#667085;padding:28px;font-size:13px}
+</style>
+</head>
+<body>
+<header><h1>💻 CIBERTURNO</h1><p>Organiza tu turno • controla tu tiempo • usa las PCs de forma ordenada</p></header>
+<main>
+<div class="grid">
+<section class="card">
+<h2>⏱️ Mi turno</h2>
+<label>Nombre o iniciales</label><input id="user" placeholder="Ej.: Aaron T.">
+<label>Computadora</label><select id="pc"><option>PC-01</option><option>PC-02</option><option>PC-03</option><option>PC-04</option><option>PC-05</option><option>PC-06</option></select>
+<label>Duración</label><select id="mins"><option value="30">30 minutos</option><option value="45" selected>45 minutos</option><option value="60">60 minutos</option></select>
+<div id="timer" class="timer">45:00</div>
+<div id="status" class="status">Listo para iniciar</div>
+<div style="text-align:center;margin-top:10px">
+<button onclick="start()">INICIAR</button><button class="alt" onclick="pause()">PAUSAR</button><button class="warn" onclick="finish()">FINALIZAR</button>
+</div>
+<div id="notice" class="notice" style="display:none;margin-top:12px"></div>
+</section>
+
+<section class="card">
+<h2>🖥️ Estado de las PCs</h2>
+<div id="pcs"></div>
+<p class="small">Este prototipo guarda los datos en este dispositivo. Para una versión escolar conectada, se puede añadir una base de datos.</p>
+</section>
+
+<section class="card">
+<h2>📋 Reglas de uso</h2>
+<p>1. Registra tu turno antes de comenzar.</p><p>2. Respeta el tiempo asignado.</p><p>3. Guarda tu trabajo antes de finalizar.</p><p>4. Cuando el temporizador llegue a cero, libera la PC.</p>
+<div class="notice"><b>Aviso:</b> CiberTurno es un prototipo escolar de EPT. No reemplaza las normas de la institución.</div>
+</section>
+</div>
+</main>
+<footer>Proyecto Crea y Emprende • EPT • 1.º de Secundaria<br><b>Aaron Rodrigo Taype Hualla</b></footer>
+<script>
+let remaining=2700, interval=null, active=false, selected="PC-01";
+const states={}; for(let i=1;i<=6;i++) states["PC-0"+i]={user:"",remaining:0};
+function fmt(s){let m=Math.floor(s/60),sec=s%60;return String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0")}
+function render(){
+ document.getElementById("timer").textContent=fmt(remaining);
+ document.getElementById("status").textContent=active?"Turno activo":"Listo para iniciar";
+ const box=document.getElementById("pcs"); box.innerHTML="";
+ Object.entries(states).forEach(([pc,v])=>{
+  const d=document.createElement("div"); d.className="pc";
+  const state=v.remaining>0?"OCUPADA":"DISPONIBLE";
+  d.innerHTML="<span><b>"+pc+"</b><br><span class='small'>"+(v.user||"Sin usuario")+"</span></span><b class='"+(state==="OCUPADA"?"busy":"free")+"'>"+state+(v.remaining>0?" • "+fmt(v.remaining):"")+"</b>";
+  box.appendChild(d);
+ });
+}
+function start(){
+ const u=document.getElementById("user").value.trim()||"Usuario";
+ selected=document.getElementById("pc").value;
+ if(!active) remaining=Number(document.getElementById("mins").value)*60;
+ states[selected]={user:u,remaining:remaining}; active=true;
+ clearInterval(interval); interval=setInterval(tick,1000); render();
+}
+function tick(){
+ if(remaining>0) remaining--;
+ states[selected].remaining=remaining;
+ if(remaining===300) show("⏰ Te quedan 5 minutos. Ve terminando tu trabajo.");
+ if(remaining===60) show("🔔 Te queda 1 minuto. Guarda tu trabajo.");
+ if(remaining===0){clearInterval(interval);active=false;states[selected]={user:"",remaining:0};show("✅ Turno terminado. La PC queda disponible.");}
+ render();
+}
+function pause(){if(active){clearInterval(interval);active=false;states[selected].remaining=remaining;render()}}
+function finish(){clearInterval(interval);active=false;states[selected]={user:"",remaining:0};remaining=Number(document.getElementById("mins").value)*60;show("Turno finalizado.");render()}
+function show(msg){let n=document.getElementById("notice");n.textContent=msg;n.style.display="block";setTimeout(()=>n.style.display="none",5000)}
+render();
+</script>
+</body></html>
